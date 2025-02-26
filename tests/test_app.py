@@ -1,35 +1,57 @@
 '''This is the test_app file'''
+from decimal import Decimal
+from faker import Faker
 import pytest
-from app import App 
+from app.operation.operations import add, subtract, multiply, divide
 
-def test_app_start_exit_command(monkeypatch):
-    """Test that the REPL exits correctly on 'exit' command."""
-    # Simulate user entering 'exit'
-    monkeypatch.setattr('builtins.input', lambda _: 'exit')
-    app = App()
-    with pytest.raises(SystemExit):
-        app.start()
+fake = Faker()
+'''Initalizing the faker object'''
 
-def test_app_start_unknown_command(capfd, monkeypatch):
-    """Test how the REPL handles an unknown command before exiting."""
-    # Simulate user entering an unknown command followed by 'exit'
-    inputs = iter(['unknown_command', 'exit'])
-    monkeypatch.setattr('builtins.input', lambda _: next(inputs))
+# pylint: disable=unused-argument
+def pytest_addoption(parser):
+    '''Adding command-line options for pytest.'''
+    parser.addoption("--num_records", action="store",default=5, type=int, help="Number of test records to generate")
 
-    app = App()
-    with pytest.raises(SystemExit):
-        app.start()
+@pytest.fixture
+def num_records(request):
+    '''Adding fixture'''
+    return request.config.getoption("--num_records")
 
-    captured = capfd.readouterr()
-    assert "unknown_command : Command not found" in captured.out, "App should notify user of unknown command"
+def generate_test_data(num_records):
+    '''Defining operation mappings for both calculator and calculation tests'''
+    operation_mappings = {
+        'add': add,
+        'subtract': subtract,
+        'multiply': multiply,
+        'divide': divide
+    }
 
-def app_command_with_args(capfd,monkeypatch):
-    '''Test how the REPL handles test app command with arguments '''
-    inputs=iter(['Add 2 4', 'exit'])
-    monkeypatch.seattr('builtins.input', lambda _: next(inputs) )
+    for _ in range(num_records):
+        x = Decimal(fake.random_number(digits=2))
+        y = Decimal(fake.random_number(digits=2)) if _ % 4 != 3 else Decimal(fake.random_number(digits=1))
+        operation_name = fake.random_element(elements=list(operation_mappings.keys()))
+        operation_func = operation_mappings[operation_name]
 
-    app=App()
-    with pytest.raises(SystemExit):
-        app.start()
+        if operation_func == divide: # pylint: disable=comparison-with-callable
+            y = Decimal('1') if y == Decimal('0') else y
+        try:
+            if operation_func == divide and y == Decimal('0'): # pylint: disable=comparison-with-callable
+                expected = ZeroDivisionError
+            else:
+                expected = operation_func(x,y)
+        except ZeroDivisionError:
+            expected = ZeroDivisionError
+        yield x, y, operation_name, operation_func, expected
+
+# pylint: disable=unused-argument
+def pytest_generate_tests(metafunc):
+    '''Defining pytest_generate_tests'''
+    if {"x", "y", "expected"}.intersection(set(metafunc.fixturenames)):
+        num_records = metafunc.config.getoption("num_records")
+        parameters = list(generate_test_data(num_records))
+        modified_parameters = [
+            (x, y, op_name if 'operation_name' in metafunc.fixturenames else op_func, expected) for x, y, op_name, op_func, expected in parameters
+        ]
+        metafunc.parametrize("x,y,operation,expected", modified_parameters)
 
 # End

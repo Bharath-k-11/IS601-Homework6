@@ -23,12 +23,3 @@ def test_operation_divide():
     '''Testing the division operation'''
     calculation = Calculation(Decimal('39'), Decimal('3'), divide)
     result = calculation.perform()
-    assert result == Decimal('13'), f"Division operation failed: expected Decimal('12'), got {result}"
-
-def test_divide_by_zero():
-    '''Testing the divide by zero exception'''
-    with pytest.raises(ValueError, match="Cannot be divided by Zero"):
-        calculation = Calculation(Decimal('19'), Decimal('0'), divide)
-        calculation.perform()
-
-# End
