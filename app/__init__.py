@@ -1,34 +1,41 @@
-import pkgutil
-import importlib
-from app.commands import CommandHandler, Command
+from app.commands.addcommand import Add 
+from app.commands.subtractcommand import Subtract
+from app.commands.multiplycommand import Multiply
+from app.commands.dividecommand import Divide
+from app.commands.menucommand import Menu
+from app.commands import CommandHandler
 
 class App:
+    '''This is the App class'''
     def __init__(self):
-        self.command_handler = CommandHandler()
-        self.load_plugins()  # Automatically load plugins
-
-    def load_plugins(self):
-        # Dynamically load all plugins from the 'app.plugins' package
-        plugins_package = 'app.plugins'
-        for _, plugin_name, is_pkg in pkgutil.iter_modules([plugins_package.replace('.', '/')]):
-            if not is_pkg:  # Only load files (not directories)
-                plugin_module = importlib.import_module(f'{plugins_package}.{plugin_name}')
-                for item_name in dir(plugin_module):
-                    item = getattr(plugin_module, item_name)
-                    if isinstance(item, type) and issubclass(item, Command) and item is not Command:
-                        # Register plugin class (e.g., Add, Subtract, etc.)
-                        self.command_handler.Register_Command(item_name.lower(), item(self.command_handler))
+        self.command_handler=CommandHandler()
+        self.command_handler.Register_Command("Add", Add())
+        self.command_handler.Register_Command("Subtract",Subtract())
+        self.command_handler.Register_Command("Multiply", Multiply())
+        self.command_handler.Register_Command("Divide", Divide())
+        self.command_handler.Register_Command("Menu", Menu(self.command_handler))
 
     def start(self):
-        print("Welcome to the calculator program! Type 'menu' to see available commands, or 'exit' to quit.")
-        self.command_handler.Execute_Command("menu")
-        while True:
-            c = input("Enter the command: ").strip().lower()
-            if c == "exit":
-                print("Exiting..")
-                break
+        '''This is the start function'''
+        print("This is the calculator program. Enter Menu to see the commands available.")
+        self.command_handler.Execute_Command("Menu")
         
-            user_input_split = c.split()
-            command_name = user_input_split[0]
-            args = user_input_split[1:]
-            self.command_handler.Execute_Command(command_name, *args)
+        while True:
+            c=input("Enter the command:").strip()
+            if c.lower() == "exit":
+                print("Exiting..")
+                raise SystemExit
+                break
+            else:
+                command_parts = c.split()
+                if command_parts:
+                    command_name = command_parts[0]
+                    # Executes registered commands
+                    if command_name in self.command_handler.commands:
+                        self.command_handler.Execute_Command(*command_parts)
+                    else:
+                        print(f"{command_name} : Command not found")
+                else:
+                    print("Enter command is invalid. Enter a valid command. Type Menu to see the available commands.")
+
+# End

@@ -1,4 +1,4 @@
-'''Configuration file to define fixtures and other configurations'''
+'''This is the test_app file'''
 from decimal import Decimal
 from faker import Faker
 import pytest
