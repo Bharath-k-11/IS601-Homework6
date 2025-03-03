@@ -1,5 +1,6 @@
 """Test suite for the App class."""
 import importlib
+import logging
 import pytest
 from app import App
 
@@ -33,8 +34,11 @@ def test_app_start_unknown_command(capfd, monkeypatch):
     assert "No such command: unknown_command" in captured.out
 
 
-def test_plugin_load_success_and_failure(capsys, monkeypatch):
+def test_plugin_load_success_and_failure(caplog, monkeypatch):
     """Test both successful and failed plugin loading."""
+    # Set up logging to capture ERROR level logs
+    caplog.set_level(logging.ERROR)
+
     def mock_import_module(name):
         """Mock import_module to handle both success and failure cases."""
         if 'broken_plugin' in name:
@@ -46,14 +50,11 @@ def test_plugin_load_success_and_failure(capsys, monkeypatch):
                        lambda _: [('', 'working_plugin', ''), ('', 'broken_plugin', '')])
     # Mock importlib.import_module
     monkeypatch.setattr('importlib.import_module', mock_import_module)
-
     # Create app instance which will trigger plugin loading
     _ = App()
 
-    # Check that both success and failure were logged
-    captured = capsys.readouterr()
-    assert "Failed to load plugin broken_plugin" in captured.out
-
+# Check that the error was logged
+    assert "Failed to load plugin broken_plugin" in caplog.text
 
 def test_app_command_with_args(capfd, monkeypatch):
     """Test executing a command with arguments."""
