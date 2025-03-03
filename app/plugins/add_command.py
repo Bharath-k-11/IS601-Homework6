@@ -27,4 +27,3 @@ class AddCommand(Command):
         except Exception as e:
             logger.exception(f"Error during addition: {e}")
             print(f"Error: {e}")
-          
