@@ -20,3 +20,4 @@ class AddCommand(Command):
             print("Invalid input. Please enter valid numbers.")
         except Exception as e:
             print(f"Error: {e}")
+
